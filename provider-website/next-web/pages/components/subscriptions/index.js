@@ -1,10 +1,14 @@
 const Subscription = (props) => {
   let subs = [];
   let isDel = [];
-  if (props.subs.length !== 0) {
-    console.log("Really");
-    subs = props.subs[0];
-    isDel = props.subs[1];
+  try {
+    if (props.subs.length !== 0) {
+      console.log("Really");
+      subs = props.subs[0];
+      isDel = props.subs[1];
+    }
+  } catch {
+    console.log("No subs");
   }
   return (
     <div className="subscriptions">
