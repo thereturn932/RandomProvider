@@ -1,6 +1,7 @@
 const Subscription = (props) => {
   let subs = [];
   let isDel = [];
+  console.log("Hello new subscription", props.subs);
   if (props.subs) {
     if (props.subs.length !== 0) {
       console.log("Really");
