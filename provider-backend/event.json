@@ -1,0 +1,22 @@
+{
+    "blockNumber":11425277,
+    "blockHash":"0x528d48bff55cf12a81d7b83e0b7ea6dd2bda5e681b1903bff284ab340a7716b8",
+    "transactionIndex":3,
+    "removed":false,
+    "address":"0xA29cb206bdEf931CbbEACc901785Fa0ff524DA77",
+    "data":"0x000000000000000000000000a29cb206bdef931cbbeacc901785fa0ff524da770000000000000000000000000000000000000000000000000000000000000001",
+    "topics":[
+        "0xbbd6751e947c4a2c8e156d5e49d371a2ef4cfc1fe25477b69c259836cad6dafb"
+    ],
+    "transactionHash":"0xa866e9653a0688ce20bf932e93e3dc3a4b77a981deb2a44f4b8d548281b6dac7",
+    "logIndex":2,
+    "event":"RequestRandomness",
+    "eventSignature":"RequestRandomness(address,uint256)",
+    "args":[
+        "0xA29cb206bdEf931CbbEACc901785Fa0ff524DA77",
+        {
+            "type":"BigNumber",
+            "hex":"0x01"
+        }
+    ]
+}
