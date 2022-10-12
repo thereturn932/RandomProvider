@@ -35,6 +35,7 @@ contract RandomnessConsumer is Ownable {
             randomId,
             randomValueCount
         );
+        randomId++;
     }
 
     function fulfillRandomness(uint _randomId, uint[] calldata _randomValue)

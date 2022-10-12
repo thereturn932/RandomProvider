@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import Coordinator_ABI from "../../utils/Coordinator_ABI.json";
-import coordinatorAddress from "../../../../../config";
+import coordinatorAddress from "../../../config";
 
 const AddFundModal = (props) => {
   const [depositAmount, setDeposit] = useState("Enter Amount");

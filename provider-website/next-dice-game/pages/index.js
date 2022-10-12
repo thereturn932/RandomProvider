@@ -1,6 +1,4 @@
 import Head from "next/head";
-import Image from "next/image";
-import styles from "../styles/Home.module.css";
 import { useState, useEffect } from "react";
 
 import { ethers } from "ethers";
@@ -118,83 +116,7 @@ export default function Home() {
     checkCorrectNetwork();
   }, []);
 
-  const getSubscriptions = async () => {
-    try {
-      const { ethereum } = window;
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
-        const coordinator = new ethers.Contract(
-          coordinatorAddress,
-          Coordinator_ABI.abi,
-          signer
-        );
-
-        const address = await signer.getAddress();
-
-        const result = await coordinator.getSubscriptipnsOfOnwer(address);
-        const { 0: subs, 1: isDel } = result;
-        console.log("Contract subs", subs);
-        console.log("Contract isDel", isDel);
-        const combined = [subs, isDel];
-        setSubCount(subs.length);
-        console.log(combined);
-        setUserSubscriptions(combined);
-      } else {
-        console.log("Ethereum object doesn't exist!");
-      }
-    } catch (error) {
-      console.log(error);
-      setTxError(error.message);
-    }
-  };
-
-  /// CONTRACT FUNCTIONS
-
-  const createNewSubscription = async () => {
-    try {
-      const { ethereum } = window;
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
-        const coordinator = new ethers.Contract(
-          coordinatorAddress,
-          Coordinator_ABI.abi,
-          signer
-        );
-        setTxStatus(0);
-        setLoadingState(0);
-        const tx = await coordinator.createSubscription();
-
-        let result = await tx.wait();
-        setLoadingState(1);
-        console.log("Mined!", result);
-        let event = result.events[0];
-        console.log(event);
-        let value = event.args[2];
-        let subId = value.toNumber();
-        setCreatedSub(subId);
-        console.log(createdSub);
-        setLoadingState(1);
-        getSubscriptions();
-      } else {
-        console.log("Ethereum object doesn't exist!");
-      }
-    } catch (error) {
-      console.log(error);
-      if (error.message.toString().includes("user rejected transaction")) {
-        setTxError("User rejected transaction");
-      } else {
-        setTxError(error.message);
-      }
-    }
-  };
-
-  useEffect(() => {
-    getSubscriptions();
-  }, [currentAccount]);
+  useEffect(() => {}, [currentAccount]);
 
   return (
     <div>

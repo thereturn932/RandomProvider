@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import Coordinator_ABI from "../../utils/Coordinator_ABI.json";
-import coordinatorAddress from "../../../../../config";
+import coordinatorAddress from "../../../config";
 import RemoveConsumerModal from "./removeconsumer";
 import AddConsumerModal from "./addconsumer";
 import AddFundModal from "./addfund";
@@ -155,22 +155,36 @@ const SubscriptionManager = (props) => {
         <div className="list-div">
           <ul className="list">
             {consumers !== [] ? (
-              consumers.map((consumer) => (
+              consumers.map((consumer, index) => (
                 <>
                   {console.log("Current consumer is", consumer)}
                   <li className="list-item" key={consumer}>
                     <p>
                       {consumer.slice(0, 6)}....{consumer.slice(38)}
                     </p>
-                    <button
-                      key={`btn-${consumer}`}
-                      onClick={() => {
-                        setConsumerModal("removeSub");
-                        setConsumerAddress(consumer);
-                      }}
-                    >
-                      Remove
-                    </button>
+                    {removed[index] ? (
+                      <button
+                        className="disabled"
+                        key={`btn-${consumer}`}
+                        onClick={() => {
+                          setConsumerModal("removeSub");
+                          setConsumerAddress(consumer);
+                        }}
+                        disabled
+                      >
+                        Removed
+                      </button>
+                    ) : (
+                      <button
+                        key={`btn-${consumer}`}
+                        onClick={() => {
+                          setConsumerModal("removeSub");
+                          setConsumerAddress(consumer);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </li>
                 </>
               ))

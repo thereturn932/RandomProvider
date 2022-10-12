@@ -229,12 +229,13 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 .list {
   display: flex;
   background-color: white;
+  flex-direction: column;
 }
 
 .list-item {
   color: black;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   padding-left: 10px;
   padding-right: 10px;
   display: flex;
@@ -242,15 +243,21 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
   width: 100%;
   justify-content: space-between;
   align-items: center;
-  border-style: solid;
-  border-color: #fefefe;
-  border-width: 2px;
+  height: 50px;
 }
 
 .list-item button {
   width: 15%;
   height: 130%;
   font-size: medium;
+}
+
+.list-item.disabled {
+  width: 15%;
+  height: 130%;
+  font-size: medium;
+
+  filter: brightness(100%) !important; 
 }
 
 .sub-top {

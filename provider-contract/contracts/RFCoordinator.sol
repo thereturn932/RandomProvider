@@ -144,6 +144,50 @@ contract RandomnessCoordinator is Ownable {
         require(sent, "Failed to send Ether");
     }
 
+    function fulfillVerifiableRandomness(
+        uint _randomId,
+        uint _noOfRandomWords,
+        address consumerAddress,
+        bytes32 hash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        uint startGas = gasleft();
+        require(msg.sender == oracleAddress, "Only Oracle Can Fulfill");
+        require(
+            subIdOfContract[consumerAddress] != 0,
+            "Contract is not subscribed"
+        );
+        bytes32 messageDigest = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+        );
+        require(
+            oracleAddress == ecrecover(messageDigest, v, r, s),
+            "Invalid Signer"
+        );
+        uint[] memory _randomValue = new uint[](_noOfRandomWords);
+        for (uint i = 0; i < _noOfRandomWords; i++) {
+            _randomValue[i] = uint256(keccak256(abi.encodePacked(hash, i)));
+        }
+        IRandomnessConsumer(consumerAddress).fulfillRandomness(
+            _randomId,
+            _randomValue
+        );
+        uint endGas = startGas - gasleft();
+        uint gasUsed = endGas * tx.gasprice;
+        uint totalFee = gasUsed + premium;
+        require(
+            balanceOfSub[subIdOfContract[consumerAddress]] >= totalFee,
+            "Subscription does not have enough tokens"
+        );
+        balanceOfSub[subIdOfContract[consumerAddress]] -= totalFee;
+        (bool sent, ) = oracleAddress.call{value: gasUsed}("");
+        require(sent, "Failed to send Ether");
+        (sent, ) = owner().call{value: premium}("");
+        require(sent, "Failed to send Ether");
+    }
+
     function getBalanceOfSub(uint subId) external view returns (uint) {
         return balanceOfSub[subId];
     }
