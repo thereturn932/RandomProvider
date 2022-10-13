@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
+//  import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IRandomnessConsumer {
@@ -12,6 +12,7 @@ interface IRandomnessConsumer {
 
 contract RandomnessCoordinator is Ownable {
     uint private latestSub;
+    uint public coordinatorRequestId;
     mapping(address => uint) public subIdOfContract;
     mapping(uint => address) public ownerOfSub;
     mapping(address => uint[]) public subsOfOwner;
@@ -23,7 +24,7 @@ contract RandomnessCoordinator is Ownable {
 
     address public oracleAddress;
 
-    event RequestRandomness(address, uint, uint);
+    event RequestRandomness(address, uint, uint, uint);
 
     constructor(address _oracleAddress) {
         oracleAddress = _oracleAddress;
@@ -62,6 +63,11 @@ contract RandomnessCoordinator is Ownable {
             msg.sender == ownerOfSub[subId],
             "You are not the owner of subscription"
         );
+        require(
+            subIdOfContract[contractAddress] == 0,
+            "Consumer already has a subscription"
+        );
+
         subIdOfContract[contractAddress] = subId;
         consumersOfSub[subId].push(contractAddress);
     }
@@ -72,6 +78,10 @@ contract RandomnessCoordinator is Ownable {
         require(
             msg.sender == ownerOfSub[subId],
             "You are not the owner of subscription"
+        );
+        require(
+            subIdOfContract[contractAddress] == subId,
+            "Address is not consumer of this subscription"
         );
         subIdOfContract[contractAddress] = 0;
         isRemoved[contractAddress][subId] = true;
@@ -99,56 +109,58 @@ contract RandomnessCoordinator is Ownable {
         require(sent, "Failed to send Ether");
     }
 
-    function requestRandomValue(uint randomId, uint randomValueCount)
-        external
-        returns (
-            address,
-            uint,
-            uint
-        )
-    {
+    function requestRandomValue(uint randomId, uint randomValueCount) external {
         require(
             subIdOfContract[msg.sender] != 0,
             "Consumer is not subscribed!"
         );
-        emit RequestRandomness(msg.sender, randomId, randomValueCount);
-        return (msg.sender, randomId, randomValueCount);
+
+        emit RequestRandomness(
+            msg.sender,
+            randomId,
+            coordinatorRequestId,
+            randomValueCount
+        );
+
+        coordinatorRequestId++;
     }
 
-    function fulfillRandomness(
-        uint _randomId,
-        uint[] calldata _randomValue,
-        address consumerAddress
-    ) external {
-        require(msg.sender == oracleAddress, "Only Oracle Can Fulfill");
-        require(
-            subIdOfContract[consumerAddress] != 0,
-            "Contract is not subscribed"
-        );
-        uint startGas = gasleft();
-        IRandomnessConsumer(consumerAddress).fulfillRandomness(
-            _randomId,
-            _randomValue
-        );
-        uint endGas = startGas - gasleft();
-        uint gasUsed = endGas * tx.gasprice;
-        uint totalFee = gasUsed + premium;
-        require(
-            balanceOfSub[subIdOfContract[consumerAddress]] >= totalFee,
-            "Subscription does not have enough tokens"
-        );
-        balanceOfSub[subIdOfContract[consumerAddress]] -= totalFee;
-        (bool sent, ) = oracleAddress.call{value: gasUsed}("");
-        require(sent, "Failed to send Ether");
-        (sent, ) = owner().call{value: premium}("");
-        require(sent, "Failed to send Ether");
-    }
+    /// @dev DEPRECATED, uses fulfillVerifiableRandomness
+    // function fulfillRandomness(
+    //     uint _randomId,
+    //     uint[] calldata _randomValue,
+    //     address consumerAddress
+    // ) external {
+    //     require(msg.sender == oracleAddress, "Only Oracle Can Fulfill");
+    //     require(
+    //         subIdOfContract[consumerAddress] != 0,
+    //         "Contract is not subscribed"
+    //     );
+    //     uint startGas = gasleft();
+    //     IRandomnessConsumer(consumerAddress).fulfillRandomness(
+    //         _randomId,
+    //         _randomValue
+    //     );
+    //     uint endGas = startGas - gasleft();
+    //     uint gasUsed = endGas * tx.gasprice;
+    //     uint totalFee = gasUsed + premium;
+    //     require(
+    //         balanceOfSub[subIdOfContract[consumerAddress]] >= totalFee,
+    //         "Subscription does not have enough tokens"
+    //     );
+    //     balanceOfSub[subIdOfContract[consumerAddress]] -= totalFee;
+    //     (bool sent, ) = oracleAddress.call{value: gasUsed}("");
+    //     require(sent, "Failed to send Ether");
+    //     (sent, ) = owner().call{value: premium}("");
+    //     require(sent, "Failed to send Ether");
+    // }
 
     function fulfillVerifiableRandomness(
         uint _randomId,
         uint _noOfRandomWords,
         address consumerAddress,
-        bytes32 hash,
+        address randomSignerAddress,
+        uint nextBlockNo,
         uint8 v,
         bytes32 r,
         bytes32 s
@@ -159,11 +171,22 @@ contract RandomnessCoordinator is Ownable {
             subIdOfContract[consumerAddress] != 0,
             "Contract is not subscribed"
         );
-        bytes32 messageDigest = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+        bytes32 hash = keccak256(
+            abi.encodePacked(consumerAddress, _randomId, blockhash(nextBlockNo))
         );
         require(
-            oracleAddress == ecrecover(messageDigest, v, r, s),
+            randomSignerAddress ==
+                ecrecover(
+                    keccak256(
+                        abi.encodePacked(
+                            "\x19Ethereum Signed Message:\n32",
+                            hash
+                        )
+                    ),
+                    v,
+                    r,
+                    s
+                ),
             "Invalid Signer"
         );
         uint[] memory _randomValue = new uint[](_noOfRandomWords);
@@ -174,8 +197,7 @@ contract RandomnessCoordinator is Ownable {
             _randomId,
             _randomValue
         );
-        uint endGas = startGas - gasleft();
-        uint gasUsed = endGas * tx.gasprice;
+        uint gasUsed = (startGas - gasleft()) * tx.gasprice;
         uint totalFee = gasUsed + premium;
         require(
             balanceOfSub[subIdOfContract[consumerAddress]] >= totalFee,
