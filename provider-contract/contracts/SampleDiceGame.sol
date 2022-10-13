@@ -2,17 +2,11 @@
 pragma solidity ^0.8.9;
 
 // Uncomment this line to use console.log
-// import "hardhat/console.sol";
+//  import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IRCCoordinator {
-    function requestRandomValue(uint randomId, uint randomValueCount)
-        external
-        returns (
-            address,
-            uint,
-            uint
-        );
+    function requestRandomValue(uint randomId, uint randomValueCount) external;
 }
 
 contract SampleDiceGame is Ownable {
@@ -32,27 +26,22 @@ contract SampleDiceGame is Ownable {
         rfCoordinator = _rfCoordinator;
     }
 
-    function playDice(uint[] calldata dicePredictions, uint randomValueCount)
-        external
-    {
+    function playDice(uint[] calldata dicePredictions) external {
+        uint words = dicePredictions.length;
         require(
-            1 < randomValueCount && randomValueCount < 5,
+            1 < words && words < 5,
             "Min 1, Max 4 dices can be played at the same time"
         );
-        require(
-            dicePredictions.length == randomValueCount,
-            "Predicted more than requested"
-        );
-        for (uint i; i < dicePredictions.length; i++) {
+
+        for (uint i; i < words; i++) {
             require(
                 0 < dicePredictions[i] && dicePredictions[i] < 7,
                 "Dice Predictions should be between 1 and 6"
             );
         }
-        IRCCoordinator(rfCoordinator).requestRandomValue(
-            randomId,
-            randomValueCount
-        );
+
+        IRCCoordinator(rfCoordinator).requestRandomValue(randomId, words);
+
         predictions[randomId] = dicePredictions;
         randomId++;
     }
@@ -61,17 +50,20 @@ contract SampleDiceGame is Ownable {
         external
     {
         require(msg.sender == rfCoordinator);
-        randomValue[_randomId] = _randomValue;
         uint[] memory tempArray = predictions[_randomId];
+        uint[] memory randomDiceResults = predictions[_randomValue.length];
+
         for (uint i = 0; i < _randomValue.length; i++) {
+            randomDiceResults[i] = (_randomValue[i] % 6) + 1;
             for (uint j = 0; j < tempArray.length; j++) {
-                if (((_randomValue[i] % 6) + 1) == tempArray[j]) {
+                if (randomDiceResults[i] == tempArray[j]) {
                     tempArray[j] = tempArray[tempArray.length - 1];
                     delete tempArray[tempArray.length - 1];
                     break;
                 }
             }
         }
+        randomValue[_randomId] = randomDiceResults;
         bool gameResult;
         if (tempArray.length == 0) {
             predictionResult[_randomId] = 1;
@@ -79,7 +71,7 @@ contract SampleDiceGame is Ownable {
         } else {
             predictionResult[_randomId] = 2;
         }
-        emit GameResult(_randomId, _randomValue, gameResult);
+        emit GameResult(_randomId, randomDiceResults, gameResult);
     }
 
     function readRandomValues(uint index)
