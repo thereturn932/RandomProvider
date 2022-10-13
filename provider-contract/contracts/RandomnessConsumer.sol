@@ -6,13 +6,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IRCCoordinator {
-    function requestRandomValue(uint randomId, uint randomValueCount)
-        external
-        returns (
-            address,
-            uint,
-            uint
-        );
+    function requestRandomValue(uint randomId, uint randomValueCount) external;
 }
 
 contract RandomnessConsumer is Ownable {
