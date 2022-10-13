@@ -62,7 +62,7 @@ export default function Home() {
       let chainId = await ethereum.request({ method: "eth_chainId" });
       console.log("Connected to chain:" + chainId);
 
-      const goerliChainId = "0x5";
+      const goerliChainId = "0x35";
 
       if (chainId !== goerliChainId) {
         alert("You are not connected to the Goerli Testnet!");
@@ -86,10 +86,10 @@ export default function Home() {
     let chainId = await ethereum.request({ method: "eth_chainId" });
     console.log("Connected to chain:" + chainId);
 
-    const goerliChainId = "0x5";
+    const cscTestnet = "0x35";
     const ethereumChainId = "0x1";
 
-    if (chainId !== goerliChainId) {
+    if (chainId !== cscTestnet) {
       setCorrectNetwork(false);
     } else {
       setCorrectNetwork(true);
@@ -97,7 +97,7 @@ export default function Home() {
   };
 
   const switchOrAddNetwork = async () => {
-    const chainId = "0x5"; // 1 ETH Mainnet 5 Goerli
+    const chainId = "0x35"; // 1 ETH Mainnet 5 Goerli
     console.log("Chain is", window.ethereum.networkVersion);
     if (window.ethereum.networkVersion !== chainId) {
       try {
@@ -108,7 +108,22 @@ export default function Home() {
         });
         setCorrectNetwork(true);
       } catch (err) {
-        console.error;
+        if (err.code === 4902) {
+          try {
+            await ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: 0x53,
+                  chainName: "CSC Testnet",
+                  rpcUrls: ["https://testnet-rpc.coinex.net/"] /* ... */,
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error;
+          }
+        }
       }
     }
   };
