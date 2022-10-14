@@ -1,3 +1,3 @@
-const coordinatorAddress = "0x303D1b49c420A4434e8387d358a2Fc430C2EDBb9";
+const coordinatorAddress = "0xa44ccE4ad0888aFBe9284d378520627855A2FAb8";
 
 export default coordinatorAddress;

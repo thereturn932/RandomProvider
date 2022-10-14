@@ -3,7 +3,7 @@ require("dotenv").config();
 
 // const provider = new ethers.providers.WebSocketProvider("wss://eth-rinkeby.alchemyapi.io/v2/oBLz1qWKWT9P5_bW8_e8b771ui46eOlw"/*"ws://localhost:8545"?*/);
 const provider = new ethers.providers.JsonRpcProvider(
-  "https://testnet-rpc.coinex.net"
+  "https://rpc.toronto.sx.technology"
 );
 
 const interface = require("../provider-contract/artifacts/contracts/RFCoordinator.sol/RandomnessCoordinator.json");
@@ -41,17 +41,15 @@ const randomSignature = async (address, id, hash) => {
   return [randomSigner, sig];
 };
 
-console.log(ethers.utils.isAddress(consumer.address));
 consumer.on(
   "RequestRandomness",
   async function (address, id, coordinatorRequestId, randomWords, event) {
-    console.log(`Result is ${JSON.stringify(event)}`);
-    console.log("Waiting for next block, current block is", event.blockNumber);
-    await new Promise((r) => setTimeout(r, 5000));
+    // console.log(`Result is ${JSON.stringify(event)}`);
+    // console.log("Waiting for next block, current block is", event.blockNumber);
+    await new Promise((r) => setTimeout(r, 4000));
     const nextBlockNo = parseInt(event.blockNumber.toString()) + 1;
     const nextBlock = await provider.getBlock(nextBlockNo);
     // console.log(nextBlock);
-    console.log("Hash of next block is", nextBlock.hash);
     let requestId = id.toString();
     let randomWordCount = parseInt(randomWords.toString());
     let encodePacked = ethers.utils.solidityPack(
@@ -59,17 +57,7 @@ consumer.on(
       [address, id, nextBlock.hash]
     );
     var hash = ethers.utils.keccak256(encodePacked);
-    console.log(hash);
     const sig = await randomSignature(address, requestId, hash);
-    console.log("nextBlock.hash", nextBlock.hash);
-    console.log("requestId", requestId);
-    console.log("randomWords", randomWords);
-    console.log("address", address);
-    console.log("sig[0]", sig[0]);
-    console.log("nextBlockNo", nextBlockNo);
-    console.log("sig[1].v", sig[1].v);
-    console.log("sig[1].r", sig[1].r);
-    console.log("sig[1].s", sig[1].s);
     await consumer
       .connect(signer)
       .fulfillVerifiableRandomness(
@@ -86,6 +74,7 @@ consumer.on(
         }
       );
     nonce++;
+    console.log("Id from consumer is", id);
     console.log(`Request done, new nonce is ${nonce}`);
   }
 );
