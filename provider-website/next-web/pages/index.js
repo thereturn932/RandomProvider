@@ -65,7 +65,7 @@ export default function Home() {
       const goerliChainId = "0x287";
 
       if (chainId !== goerliChainId) {
-        alert("You are not connected to the Goerli Testnet!");
+        alert("You are not connected to the SX Testnet!");
         return;
       }
 
@@ -289,7 +289,7 @@ export default function Home() {
             className="text-2xl font-bold py-3 px-12 bg-[#f1c232] rounded-lg mb-10 hover:scale-105 transition duration-500 ease-in-out"
             onClick={switchOrAddNetwork}
           >
-            Switch to Goerli
+            Switch to SX Testnet
           </button>
         )}
         <div className="text-xl font-semibold mb-20 mt-4"></div>
