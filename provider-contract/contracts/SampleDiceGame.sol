@@ -53,15 +53,15 @@ contract SampleDiceGame is Ownable {
     {
         require(msg.sender == rfCoordinator);
         uint[] memory tempArray = predictions[_randomId];
-        uint loopLength = _randomValue.length;
-        uint tempArrayLength = tempArray.length;
-        for (uint i = 0; i < loopLength; i++) {
+        require(tempArray.length > 0, "Predictions can't be less than 0");
+        for (uint i = 0; i <  _randomValue.length;i++) {
             uint randomDiceResult = (_randomValue[i] % 6) + 1;
             randomValue[_randomId].push(randomDiceResult);
-            for (uint j = 0; j < tempArrayLength; j++) {
-                if (randomDiceResult == tempArray[j]) {
-                    tempArray[j] = tempArray[tempArrayLength - 1];
-                    tempArrayLength--;
+            for (int j = 0; uint(j) <   tempArray.length ; j++) {
+                if (randomDiceResult == tempArray[uint(j)]) {
+                    tempArray[uint(j)] = tempArray[tempArray.length-1];
+                    assembly { mstore(tempArray, sub(mload(tempArray), 1)) }
+                    unchecked {j--;}
                     break;
                 }
             }

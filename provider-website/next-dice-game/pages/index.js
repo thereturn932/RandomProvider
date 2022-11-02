@@ -6,7 +6,7 @@ import axios from "axios";
 
 // Components
 
-import gameABI from "../../../provider-contract/artifacts/contracts/SampleDiceGame.sol/SampleDiceGame.json";
+import gameABI from "../SampleDiceGame.json";
 
 import { BsTwitter, BsGithub } from "react-icons/bs";
 import { FaFacebookF, FaTelegramPlane, FaDiscord } from "react-icons/fa";
