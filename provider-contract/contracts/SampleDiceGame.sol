@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
 // Uncomment this line to use console.log
@@ -14,7 +14,7 @@ contract SampleDiceGame is Ownable {
     mapping(uint => uint[]) public predictions;
     mapping(uint => uint8) public predictionResult;
     uint public randomId;
-    event RequestRandomness(address, uint, uint);
+    event RequestRandomness(address, uint, uint[]);
     event GameResult(uint, uint[], bool);
     address public rfCoordinator;
 
@@ -29,7 +29,7 @@ contract SampleDiceGame is Ownable {
     function playDice(uint[] calldata dicePredictions) external {
         uint words = dicePredictions.length;
         require(
-            1 < words && words < 5,
+            0 < words && words < 5,
             "Min 1, Max 4 dices can be played at the same time"
         );
 
@@ -43,6 +43,8 @@ contract SampleDiceGame is Ownable {
         IRCCoordinator(rfCoordinator).requestRandomValue(randomId, words);
 
         predictions[randomId] = dicePredictions;
+
+        emit RequestRandomness(msg.sender, randomId, dicePredictions);
         randomId++;
     }
 
@@ -51,19 +53,19 @@ contract SampleDiceGame is Ownable {
     {
         require(msg.sender == rfCoordinator);
         uint[] memory tempArray = predictions[_randomId];
-        uint[] memory randomDiceResults = predictions[_randomValue.length];
-
-        for (uint i = 0; i < _randomValue.length; i++) {
-            randomDiceResults[i] = (_randomValue[i] % 6) + 1;
-            for (uint j = 0; j < tempArray.length; j++) {
-                if (randomDiceResults[i] == tempArray[j]) {
-                    tempArray[j] = tempArray[tempArray.length - 1];
-                    delete tempArray[tempArray.length - 1];
+        uint loopLength = _randomValue.length;
+        uint tempArrayLength = tempArray.length;
+        for (uint i = 0; i < loopLength; i++) {
+            uint randomDiceResult = (_randomValue[i] % 6) + 1;
+            randomValue[_randomId].push(randomDiceResult);
+            for (uint j = 0; j < tempArrayLength; j++) {
+                if (randomDiceResult == tempArray[j]) {
+                    tempArray[j] = tempArray[tempArrayLength - 1];
+                    tempArrayLength--;
                     break;
                 }
             }
         }
-        randomValue[_randomId] = randomDiceResults;
         bool gameResult;
         if (tempArray.length == 0) {
             predictionResult[_randomId] = 1;
@@ -71,7 +73,7 @@ contract SampleDiceGame is Ownable {
         } else {
             predictionResult[_randomId] = 2;
         }
-        emit GameResult(_randomId, randomDiceResults, gameResult);
+        emit GameResult(_randomId, randomValue[_randomId], gameResult);
     }
 
     function readRandomValues(uint index)

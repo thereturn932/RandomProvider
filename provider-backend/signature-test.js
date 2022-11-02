@@ -67,25 +67,24 @@ const randomSignature = async (hash) => {
 };
 
 async function main() {
-  var hash = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("addressnextBlock.hash")
+  let encodePacked = ethers.utils.solidityPack(
+    ["address", "uint256", "bytes32"],
+    [
+      "0xa56B936782607974145426F2258eD57227644A26",
+      "5",
+      "0x8168c656f3842ad25a7e5c68a70dcc9854f5e01c390bb2bfe1779194bd07beb8",
+    ]
   );
-  console.log(hash);
+  var hash = ethers.utils.keccak256(encodePacked);
+  console.log("Hash is", hash);
   var address = "address";
   var requestId = "id";
   var randomWords = "1";
   const sig = await randomSignature(hash);
-  console.log(sig);
-  console.log(sig[0]);
-  console.log(sig[1].v);
-  console.log(sig[1].r);
-  console.log(sig[1].s);
-
-  console.log(
-    await consumer
-      .connect(signer)
-      .fulfillVerifiableRandomness(sig[0], sig[1].v, sig[1].r, sig[1].s)
-  );
+  // console.log(sig);
+  // console.log(sig[1].v);
+  // console.log(sig[1].r);
+  // console.log(sig[1].s);
 }
 
 main().catch((error) => {
