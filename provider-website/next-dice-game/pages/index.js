@@ -5,15 +5,24 @@ import { ethers } from "ethers";
 import axios from "axios";
 
 // Components
-import Subscription from "./components/subscriptions";
-import SubscriptionManager from "./components/submanager";
 
-import Coordinator_ABI from "./utils/Coordinator_ABI.json";
-
-import coordinatorAddress from "../config";
+import gameABI from "../../../provider-contract/artifacts/contracts/SampleDiceGame.sol/SampleDiceGame.json";
 
 import { BsTwitter, BsGithub } from "react-icons/bs";
 import { FaFacebookF, FaTelegramPlane, FaDiscord } from "react-icons/fa";
+import dynamic from "next/dynamic";
+
+import RollDice from "./components/dice";
+import Die from "./components/dice/Die";
+import {
+  faDiceOne,
+  faDiceTwo,
+  faDiceThree,
+  faDiceFour,
+  faDiceFive,
+  faDiceSix,
+} from "@fortawesome/free-solid-svg-icons";
+import gameAddress from "../config";
 
 export default function Home() {
   const [currentAccount, setCurrentAccount] = useState("");
@@ -25,6 +34,12 @@ export default function Home() {
   const [userSubscriptions, setUserSubscriptions] = useState([]);
   const [subCount, setSubCount] = useState(0);
   const [createdSub, setCreatedSub] = useState(null);
+  const [dieResult, setDieResult] = useState(faDiceOne);
+  const [rolling, setRolling] = useState(false);
+  const [waitingResult, setWaitingResult] = useState(false);
+  const [predictions, setPredictions] = useState(0);
+  const [gameId, setGameId] = useState(-1);
+  const [gameResult, setGameResult] = useState(-1);
 
   const [email, setEmail] = useState("Enter Email Address");
 
@@ -60,7 +75,7 @@ export default function Home() {
       let chainId = await ethereum.request({ method: "eth_chainId" });
       console.log("Connected to chain:" + chainId);
 
-      const goerliChainId = "0x5";
+      const goerliChainId = "0x287";
 
       if (chainId !== goerliChainId) {
         alert("You are not connected to the Goerli Testnet!");
@@ -84,7 +99,7 @@ export default function Home() {
     let chainId = await ethereum.request({ method: "eth_chainId" });
     console.log("Connected to chain:" + chainId);
 
-    const goerliChainId = "0x5";
+    const goerliChainId = "0x287";
     const ethereumChainId = "0x1";
 
     if (chainId !== goerliChainId) {
@@ -95,7 +110,7 @@ export default function Home() {
   };
 
   const switchOrAddNetwork = async () => {
-    const chainId = "0x5"; // 1 ETH Mainnet 5 Goerli
+    const chainId = "0x287"; // 1 ETH Mainnet 5 Goerli
     console.log("Chain is", window.ethereum.networkVersion);
     if (window.ethereum.networkVersion !== chainId) {
       try {
@@ -117,6 +132,87 @@ export default function Home() {
   }, []);
 
   useEffect(() => {}, [currentAccount]);
+
+  const playDice = async () => {
+    try {
+      const { ethereum } = window;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const game = new ethers.Contract(gameAddress, gameABI.abi, signer);
+        console.log(`Prediction is ${predictions}`);
+        if (predictions < 1 || predictions > 6) {
+          alert("Prediction Should Be Between 1 and 6");
+          return;
+        }
+        const gameTx = await game.playDice([predictions]);
+        const result = await gameTx.wait();
+        const event = result.events.find(
+          (event) => event.event === "RequestRandomness"
+        );
+        console.log("Event is", event);
+        const [address, randomId, dicePredictions] = event.args;
+        console.log(address, randomId.toNumber(), dicePredictions);
+        setGameId(randomId.toNumber());
+        setWaitingResult(true);
+      } else {
+        console.log("Ethereum object doesn't exist!");
+      }
+    } catch (error) {
+      alert(error);
+      console.log(error);
+      setTxError(error.message);
+    }
+  };
+
+  if (waitingResult) {
+    const provider = new ethers.providers.Web3Provider(ethereum);
+    const signer = provider.getSigner();
+    const game = new ethers.Contract(gameAddress, gameABI.abi, signer);
+    game.on("GameResult", async (randomId, dices, result, event) => {
+      if (randomId.toNumber() == gameId) {
+        setWaitingResult(false);
+        switch (dices[0].toString()) {
+          case "1":
+            setDieResult(faDiceOne);
+            break;
+          case "2":
+            setDieResult(faDiceTwo);
+            break;
+          case "3":
+            setDieResult(faDiceThree);
+            break;
+          case "4":
+            setDieResult(faDiceFour);
+            break;
+          case "5":
+            setDieResult(faDiceFive);
+            break;
+          case "6":
+            setDieResult(faDiceSix);
+            break;
+          default:
+            console.log("Result", dices[0].toString, "out of bonds");
+        }
+        setRolling(true);
+        setRolling(false);
+        if (result) {
+          setGameResult(1);
+        } else {
+          setGameResult(2);
+        }
+      }
+    });
+  }
+
+  useEffect(() => {
+    if (gameResult === 1) {
+      alert("You Win!");
+    } else if (gameResult === 2) {
+      alert("You Lost!");
+    }
+  }, [rolling]);
 
   return (
     <div>
@@ -148,47 +244,31 @@ export default function Home() {
           </div>
         ) : correctNetwork ? (
           <div className="content-page">
-            <div className="sub-creation">
-              <div className="creation-control">
-                <button onClick={createNewSubscription}>
-                  Create New Subscription
-                </button>
-                <p>You have {subCount} subscriptions</p>
+            <div className="game-area">
+              <select
+                value={predictions}
+                onChange={(e, value) => {
+                  console.log(e.target.value);
+                  setPredictions(e.target.value);
+                }}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+              <div className="dice">
+                <Die face={dieResult} rolling={rolling} />
               </div>
-              <div className="creation-tx">
-                {loadingState === 0 ? (
-                  txStatus === 0 ? (
-                    txError === null ? (
-                      <div>
-                        <div>Processing your transaction</div>
-                      </div>
-                    ) : (
-                      <div className="tx-error">{txError}</div>
-                    )
-                  ) : (
-                    <div></div>
-                  )
-                ) : (
-                  <div className="flex flex-col justify-center items-center">
-                    <p>Created Subscription {createdSub}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="control-panel">
-              {currentSubscription == -1 ? (
-                <Subscription
-                  subs={userSubscriptions}
-                  changeCurrentSub={setCurrentSubscription}
-                />
-              ) : (
-                <SubscriptionManager
-                  subs={userSubscriptions}
-                  currentSub={currentSubscription}
-                  changeCurrentSub={setCurrentSubscription}
-                />
-              )}
+              <button
+                onClick={() => {
+                  playDice();
+                }}
+              >
+                Play Dice!
+              </button>
             </div>
           </div>
         ) : (
@@ -196,10 +276,9 @@ export default function Home() {
             className="text-2xl font-bold py-3 px-12 bg-[#f1c232] rounded-lg mb-10 hover:scale-105 transition duration-500 ease-in-out"
             onClick={switchOrAddNetwork}
           >
-            Switch to Goerli
+            Switch to SX Network
           </button>
         )}
-        <div className="text-xl font-semibold mb-20 mt-4"></div>
       </div>
 
       <footer className="footer">
